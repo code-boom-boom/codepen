@@ -4,6 +4,7 @@ import Wolf from './Wolf'
 import Tree from './Tree'
 import Carrot from './Carrot'
 import BonusParticles from './BonusParticles'
+import Hedgehog from './Hedgehog'
 
 let scene: THREE.Scene,
   camera: THREE.PerspectiveCamera,
@@ -60,6 +61,7 @@ let rabbit: Rabbit
 let wolf: Wolf
 let carrot: Carrot
 let bonusParticles: BonusParticles
+let obstacle: Hedgehog
 
 const init = (target: HTMLDivElement) => {
   HEIGHT = window.innerHeight
@@ -216,6 +218,15 @@ const updateFloorRotation = () => {
   floor.rotation.z = floorRotation
 }
 
+const createObstacle = () => {
+  obstacle = new Hedgehog()
+  obstacle.body.rotation.y = -Math.PI / 2
+  obstacle.mesh.scale.set(1.1, 1.1, 1.1)
+  obstacle.mesh.position.y = floorRadius + 4
+  obstacle.nod()
+  scene.add(obstacle.mesh)
+}
+
 const createBonusParticles = () => {
   bonusParticles = new BonusParticles()
   bonusParticles.mesh.visible = false
@@ -240,7 +251,7 @@ const loop = () => {
   }
 
   render()
-  // requestAnimationFrame(loop)
+  requestAnimationFrame(loop)
 }
 
 const render = () => {
@@ -256,9 +267,11 @@ const initializer = (target: HTMLDivElement) => {
   createFirs()
   createCarrot()
   createBonusParticles()
+  createObstacle()
   loop()
 }
 
-const unmount = () => {}
+const unmount = () => {
+}
 
 export { initializer, unmount }
