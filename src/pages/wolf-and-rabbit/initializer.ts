@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import Rabbit from './Rabbit'
+import Wolf from './Wolf'
 
 let scene: THREE.Scene,
   camera: THREE.PerspectiveCamera,
@@ -52,7 +53,8 @@ let HEIGHT,
 
 //3D OBJECTS VARIABLES
 
-let rabbit
+let rabbit: Rabbit
+let wolf: Wolf
 
 const init = (target: HTMLDivElement) => {
   HEIGHT = window.innerHeight
@@ -150,6 +152,14 @@ const createRabbit = () => {
   rabbit = new Rabbit()
   rabbit.mesh.rotation.y = Math.PI / 2
   scene.add(rabbit.mesh)
+  // TODO rabbit.nod()
+}
+
+const createWolf = () => {
+  wolf = new Wolf()
+  wolf.mesh.position.z = 20
+  scene.add(wolf.mesh)
+  // TODO: updateWolfPosition()
 }
 
 const loop = () => {
@@ -168,9 +178,11 @@ const initializer = (target: HTMLDivElement) => {
   createLight()
   createFloor()
   createRabbit()
+  createWolf()
   loop()
 }
 
-const unmount = () => {}
+const unmount = () => {
+}
 
 export { initializer, unmount }

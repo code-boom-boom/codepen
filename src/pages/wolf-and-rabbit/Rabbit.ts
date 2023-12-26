@@ -6,6 +6,7 @@ import {
   pinkMat,
   whiteMat
 } from './materials'
+import { updateGeomVertex } from '../../helpers'
 
 type Status = 'running'
 
@@ -129,15 +130,10 @@ export default class Rabbit {
 
     const positions = earGeom.attributes.position
 
-    const updateVertex = (vertexIndex: number, dx: number, dz: number) => {
-      positions.array[vertexIndex * 3] += dx
-      positions.array[vertexIndex * 3 + 2] += dz
-    }
-
-    updateVertex(6, 2, 0.5)
-    updateVertex(7, 2, -0.5)
-    updateVertex(2, -2, -0.5)
-    updateVertex(3, -2, 0.5)
+    updateGeomVertex(positions, 6, 2, undefined, 0.5)
+    updateGeomVertex(positions, 7, 2, undefined, -0.5)
+    updateGeomVertex(positions, 2, -2, undefined, -0.5)
+    updateGeomVertex(positions, 3, -2, undefined, 0.5)
 
     positions.needsUpdate = true
 
