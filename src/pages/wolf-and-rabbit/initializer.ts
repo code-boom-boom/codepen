@@ -2,6 +2,8 @@ import * as THREE from 'three'
 import Rabbit from './Rabbit'
 import Wolf from './Wolf'
 import Tree from './Tree'
+import Carrot from './Carrot'
+import BonusParticles from './BonusParticles'
 
 let scene: THREE.Scene,
   camera: THREE.PerspectiveCamera,
@@ -56,6 +58,8 @@ let HEIGHT,
 
 let rabbit: Rabbit
 let wolf: Wolf
+let carrot: Carrot
+let bonusParticles: BonusParticles
 
 const init = (target: HTMLDivElement) => {
   HEIGHT = window.innerHeight
@@ -163,14 +167,15 @@ const createWolf = () => {
   updateWolfPosition()
 }
 
-const firs = new THREE.Group()
-
 const createFirs = () => {
   const nTrees = 100
   for (let i = 0; i < nTrees; i++) {
-    const phi = i * (Math.PI * 2) / nTrees
+    const phi = (i * (Math.PI * 2)) / nTrees
     let theta = Math.PI / 2
-    theta += (Math.random() > .05) ? .25 + Math.random() * .3 : -.35 - Math.random() * .1
+    theta +=
+      Math.random() > 0.05
+        ? 0.25 + Math.random() * 0.3
+        : -0.35 - Math.random() * 0.1
 
     const fir = new Tree()
     fir.mesh.position.x = Math.sin(theta) * Math.cos(phi) * floorRadius
@@ -182,6 +187,11 @@ const createFirs = () => {
     fir.mesh.quaternion.setFromUnitVectors(axis, vec.clone().normalize())
     floor.add(fir.mesh)
   }
+}
+
+const createCarrot = () => {
+  carrot = new Carrot()
+  scene.add(carrot.mesh)
 }
 
 const updateWolfPosition = () => {
@@ -204,6 +214,12 @@ const updateFloorRotation = () => {
   floorRotation += delta * 0.03 * speed
   floorRotation = floorRotation % (Math.PI * 2)
   floor.rotation.z = floorRotation
+}
+
+const createBonusParticles = () => {
+  bonusParticles = new BonusParticles()
+  bonusParticles.mesh.visible = false
+  scene.add(bonusParticles.mesh)
 }
 
 const loop = () => {
@@ -238,10 +254,11 @@ const initializer = (target: HTMLDivElement) => {
   createRabbit()
   createWolf()
   createFirs()
+  createCarrot()
+  createBonusParticles()
   loop()
 }
 
-const unmount = () => {
-}
+const unmount = () => {}
 
 export { initializer, unmount }
