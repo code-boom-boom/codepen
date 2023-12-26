@@ -8,8 +8,9 @@ import {
 } from './materials'
 import { updateGeomVertex } from '../../helpers'
 import { TweenMax, Power1, Power4 } from 'gsap'
+import { gsap } from 'gsap'
 
-type Status = 'running'
+type Status = 'running' | 'jumping'
 
 export default class Rabbit {
   status: Status
@@ -361,5 +362,93 @@ export default class Rabbit {
         yoyo: true,
         repeat: 1
       })
+  }
+
+  hang() {
+    const sp = 1
+    const ease = Power4.easeOut
+
+    gsap.killTweensOf(this.eyeL.scale)
+    gsap.killTweensOf(this.eyeR.scale)
+
+    this.body.rotation.x = 0
+    this.torso.rotation.x = 0
+    this.body.position.y = 0
+    this.torso.position.y = 7
+
+    gsap.to(this.mesh.rotation, sp, { y: 0, ease: ease })
+    gsap.to(this.mesh.position, sp, { y: -7, z: 6, ease: ease })
+    gsap.to(this.head.rotation, sp, {
+      x: Math.PI / 6,
+      ease: ease,
+      onComplete: () => {
+        this.nod()
+      }
+    })
+
+    gsap.to(this.earL.rotation, sp, { x: Math.PI / 3, ease: ease })
+    gsap.to(this.earR.rotation, sp, { x: Math.PI / 3, ease: ease })
+
+    gsap.to(this.pawFL.position, sp, { y: -1, z: 3, ease: ease })
+    gsap.to(this.pawFR.position, sp, { y: -1, z: 3, ease: ease })
+    gsap.to(this.pawBL.position, sp, { y: -2, z: -3, ease: ease })
+    gsap.to(this.pawBR.position, sp, { y: -2, z: -3, ease: ease })
+
+    gsap.to(this.eyeL.scale, sp, { y: 1, ease: ease })
+    gsap.to(this.eyeR.scale, sp, { y: 1, ease: ease })
+  }
+
+  jump() {
+    if (this.status === 'jumping') return
+    this.status = 'jumping'
+    const totalSpeed = 10 / this.speed
+    const jumpHeight = 45
+
+    TweenMax.to(this.earL.rotation, totalSpeed, {
+      x: '+=.3',
+      ease: Back.easeOut
+    })
+    TweenMax.to(this.earR.rotation, totalSpeed, {
+      x: '-=.3',
+      ease: Back.easeOut
+    })
+
+    TweenMax.to(this.pawFL.rotation, totalSpeed, {
+      x: '+=.7',
+      ease: Back.easeOut
+    })
+    TweenMax.to(this.pawFR.rotation, totalSpeed, {
+      x: '-=.7',
+      ease: Back.easeOut
+    })
+    TweenMax.to(this.pawBL.rotation, totalSpeed, {
+      x: '+=.7',
+      ease: Back.easeOut
+    })
+    TweenMax.to(this.pawBR.rotation, totalSpeed, {
+      x: '-=.7',
+      ease: Back.easeOut
+    })
+
+    TweenMax.to(this.tail.rotation, totalSpeed, {
+      x: '+=1',
+      ease: Back.easeOut
+    })
+
+    TweenMax.to(this.mouth.rotation, totalSpeed, { x: 0.5, ease: Back.easeOut })
+
+    TweenMax.to(this.mesh.position, totalSpeed / 2, {
+      y: jumpHeight,
+      ease: Power2.easeOut
+    })
+    TweenMax.to(this.mesh.position, totalSpeed / 2, {
+      y: 0,
+      ease: Power4.easeIn,
+      delay: totalSpeed / 2,
+      onComplete: () => {
+        //t = 0;
+        this.status = 'running'
+      }
+    })
   }
 }

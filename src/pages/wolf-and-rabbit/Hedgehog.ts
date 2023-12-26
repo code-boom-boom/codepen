@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { TweenMax } from 'gsap'
 import { blackMat, lightBrownMat, whiteMat } from './materials'
 
-type Status = 'ready'
+type Status = 'ready' | 'flying'
 
 export default class Hedgehog {
   angle: number

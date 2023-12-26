@@ -5,6 +5,13 @@ import Tree from './Tree'
 import Carrot from './Carrot'
 import BonusParticles from './BonusParticles'
 import Hedgehog from './Hedgehog'
+import { TweenMax, Power4, gsap } from 'gsap'
+
+export type GameStatusType =
+  | 'play'
+  | 'gameOver'
+  | 'readyToReplay'
+  | 'preparingToReplay'
 
 let scene: THREE.Scene,
   camera: THREE.PerspectiveCamera,
@@ -22,10 +29,10 @@ let floorShadow: THREE.Mesh, floorGrass: THREE.Mesh, floor: THREE.Group
 
 let delta = 0
 const floorRadius = 200
-const speed = 6
-const distance = 0
-const level = 1
-let levelInterval
+let speed = 6
+let distance = 0
+let level = 1
+let levelInterval: string | number | NodeJS.Timeout | undefined
 const levelUpdateFreq = 3000
 const initSpeed = 5
 const maxSpeed = 48
@@ -34,7 +41,7 @@ let wolfPosTarget = 0.65
 let floorRotation = 0
 const collisionObstacle = 10
 const collisionBonus = 20
-const gameStatus = 'play'
+let gameStatus: GameStatusType = 'play'
 const cameraPosGame = 160
 const cameraPosGameOver = 260
 const wolfAcceleration = 0.004
@@ -42,18 +49,11 @@ const malusClearColor = 0xb44b39
 const malusClearAlpha = 0
 const audio = new Audio('assets/race.mp3')
 
-let fieldGameOver, fieldDistance
+let fieldGameOver: HTMLDivElement
 
 //SCREEN & MOUSE VARIABLES
 
-let HEIGHT,
-  WIDTH,
-  windowHalfX,
-  windowHalfY,
-  mousePos = {
-    x: 0,
-    y: 0
-  }
+let HEIGHT, WIDTH, windowHalfX, windowHalfY
 
 //3D OBJECTS VARIABLES
 
@@ -102,6 +102,10 @@ const init = (target: HTMLDivElement) => {
   container = target
   container.innerHTML = ''
   container.appendChild(renderer.domElement)
+
+  window.addEventListener('resize', handleWindowResize, false)
+  document.addEventListener('mousedown', handleMouseDown, false)
+  document.addEventListener('touchend', handleMouseDown, false)
 
   clock = new THREE.Clock()
 }
@@ -196,20 +200,60 @@ const createCarrot = () => {
   scene.add(carrot.mesh)
 }
 
+const updateCarrotPosition = () => {
+  carrot.mesh.rotation.y += delta * 6
+  carrot.mesh.rotation.z = Math.PI / 2 - (floorRotation + carrot.angle)
+  carrot.mesh.position.y =
+    -floorRadius + Math.sin(floorRotation + carrot.angle) * (floorRadius + 50)
+  carrot.mesh.position.x =
+    Math.cos(floorRotation + carrot.angle) * (floorRadius + 50)
+}
+
+const updateObstaclePosition = () => {
+  if (obstacle.status === 'flying') return
+
+  // TODO fix this,
+  if (floorRotation + obstacle.angle > 2.5) {
+    obstacle.angle = -floorRotation + Math.random() * 0.3
+    obstacle.body.rotation.y = Math.random() * Math.PI * 2
+  }
+
+  obstacle.mesh.rotation.z = floorRotation + obstacle.angle - Math.PI / 2
+  obstacle.mesh.position.y =
+    -floorRadius + Math.sin(floorRotation + obstacle.angle) * (floorRadius + 3)
+  obstacle.mesh.position.x =
+    Math.cos(floorRotation + obstacle.angle) * (floorRadius + 3)
+}
+
 const updateWolfPosition = () => {
   wolf.run()
 
-  wolfPosTarget += delta * wolfAcceleration
+  wolfPosTarget -= delta * wolfAcceleration
   wolfPos += (wolfPosTarget - wolfPos) * delta
 
   if (wolfPos < 0.56) {
-    console.log('game over')
+    gameOver()
   }
 
   const angle = Math.PI * wolfPos
   wolf.mesh.position.y = -floorRadius + Math.sin(angle) * (floorRadius + 12)
   wolf.mesh.position.x = Math.cos(angle) * (floorRadius + 15)
   wolf.mesh.rotation.z = -Math.PI / 2 + angle
+}
+
+function gameOver(this: any) {
+  // TODO: fieldGameOver.className = "show"
+  gameStatus = 'gameOver'
+  wolf.sit((status: GameStatusType) => {
+    gameStatus = status
+  })
+  rabbit.hang()
+  wolf.rabbitHolder.add(rabbit.mesh)
+  TweenMax.to(this, 1, { speed: 0 })
+  TweenMax.to(camera.position, 3, { z: cameraPosGameOver, y: 60, x: -30 })
+  carrot.mesh.visible = false
+  obstacle.mesh.visible = false
+  clearInterval(levelInterval)
 }
 
 const updateFloorRotation = () => {
@@ -233,6 +277,76 @@ const createBonusParticles = () => {
   scene.add(bonusParticles.mesh)
 }
 
+const checkCollision = () => {
+  const db = rabbit.mesh.position.clone().sub(carrot.mesh.position.clone())
+  const dm = rabbit.mesh.position.clone().sub(obstacle.mesh.position.clone())
+
+  if (db.length() < collisionBonus) {
+    getBonus()
+  }
+
+  if (dm.length() < collisionObstacle && obstacle.status != 'flying') {
+    getMalus()
+  }
+}
+
+const getBonus = () => {
+  bonusParticles.mesh.position.copy(carrot.mesh.position)
+  bonusParticles.mesh.visible = true
+  bonusParticles.expose()
+  carrot.angle += Math.PI / 2
+  wolfPosTarget += 0.025
+}
+
+function getMalus(this: any) {
+  obstacle.status = 'flying'
+  const tx =
+    Math.random() > 0.5 ? -20 - Math.random() * 10 : 20 + Math.random() * 5
+  TweenMax.to(obstacle.mesh.position, 4, {
+    x: tx,
+    y: Math.random() * 50,
+    z: 350,
+    ease: Power4.easeOut
+  })
+  TweenMax.to(obstacle.mesh.rotation, 4, {
+    x: Math.PI * 3,
+    z: Math.PI * 3,
+    y: Math.PI * 6,
+    ease: Power4.easeOut,
+    onComplete: function () {
+      obstacle.status = 'ready'
+      obstacle.body.rotation.y = Math.random() * Math.PI * 2
+      obstacle.angle = -floorRotation - Math.random() * 0.4
+
+      obstacle.angle = obstacle.angle % (Math.PI * 2)
+      obstacle.mesh.rotation.x = 0
+      obstacle.mesh.rotation.y = 0
+      obstacle.mesh.rotation.z = 0
+      obstacle.mesh.position.z = 0
+    }
+  })
+  //
+  wolfPosTarget -= 0.04
+  TweenMax.from(this, 0.5, {
+    malusClearAlpha: 0.5,
+    onUpdate: function () {
+      renderer.setClearColor(malusClearColor, malusClearAlpha)
+    }
+  })
+}
+
+const updateDistance = () => {
+  distance += delta * speed
+  const d = distance / 2
+  // TODO: fieldDistance.innerHTML = Math.floor(d);
+}
+
+const updateLevel = () => {
+  if (speed >= maxSpeed) return
+  level++
+  speed += 2
+}
+
 const loop = () => {
   delta = clock.getDelta()
   wolf.speed = speed
@@ -247,7 +361,11 @@ const loop = () => {
     if (rabbit.status === 'running') {
       rabbit.run()
     }
+    updateDistance()
     updateWolfPosition()
+    updateCarrotPosition()
+    updateObstaclePosition()
+    checkCollision()
   }
 
   render()
@@ -268,10 +386,98 @@ const initializer = (target: HTMLDivElement) => {
   createCarrot()
   createBonusParticles()
   createObstacle()
+  resetGame()
   loop()
 }
 
-const unmount = () => {
+const resetGame = () => {
+  scene.add(rabbit.mesh)
+  rabbit.mesh.rotation.y = Math.PI / 2
+  rabbit.mesh.position.y = 0
+  rabbit.mesh.position.z = 0
+  rabbit.mesh.position.x = 0
+
+  wolfPos = 0.56
+  wolfPosTarget = 0.65
+  speed = initSpeed
+  level = 0
+  distance = 0
+  carrot.mesh.visible = true
+  obstacle.mesh.visible = true
+  gameStatus = 'play'
+  rabbit.status = 'running'
+  rabbit.nod()
+  audio.play()
+  updateLevel()
+  levelInterval = setInterval(updateLevel, levelUpdateFreq)
+}
+
+const unmount = () => {}
+
+const handleWindowResize = () => {
+  HEIGHT = window.innerHeight
+  WIDTH = window.innerWidth
+  windowHalfX = WIDTH / 2
+  windowHalfY = HEIGHT / 2
+  renderer.setSize(WIDTH, HEIGHT)
+  camera.aspect = WIDTH / HEIGHT
+  camera.updateProjectionMatrix()
+}
+
+const handleMouseDown = (event: MouseEvent | TouchEvent) => {
+  if (gameStatus == 'play') rabbit.jump()
+  else if (gameStatus == 'readyToReplay') {
+    replay()
+  }
+}
+
+const replay = () => {
+  gameStatus = 'preparingToReplay'
+
+  fieldGameOver.className = ''
+
+  gsap.killTweensOf(wolf.pawFL.position)
+  gsap.killTweensOf(wolf.pawFR.position)
+  gsap.killTweensOf(wolf.pawBL.position)
+  gsap.killTweensOf(wolf.pawBR.position)
+
+  gsap.killTweensOf(wolf.pawFL.rotation)
+  gsap.killTweensOf(wolf.pawFR.rotation)
+  gsap.killTweensOf(wolf.pawBL.rotation)
+  gsap.killTweensOf(wolf.pawBR.rotation)
+
+  gsap.killTweensOf(wolf.tail.rotation)
+  gsap.killTweensOf(wolf.head.rotation)
+  gsap.killTweensOf(wolf.eyeL.scale)
+  gsap.killTweensOf(wolf.eyeR.scale)
+
+  wolf.tail.rotation.y = 0
+
+  TweenMax.to(camera.position, 3, {
+    z: cameraPosGame,
+    x: 0,
+    y: 30,
+    ease: Power4.easeInOut
+  })
+  TweenMax.to(wolf.torso.rotation, 2, { x: 0, ease: Power4.easeInOut })
+  TweenMax.to(wolf.torso.position, 2, { y: 0, ease: Power4.easeInOut })
+  TweenMax.to(wolf.pawFL.rotation, 2, { x: 0, ease: Power4.easeInOut })
+  TweenMax.to(wolf.pawFR.rotation, 2, { x: 0, ease: Power4.easeInOut })
+  TweenMax.to(wolf.mouth.rotation, 2, { x: 0.5, ease: Power4.easeInOut })
+
+  TweenMax.to(wolf.head.rotation, 2, { y: 0, x: -0.3, ease: Power4.easeInOut })
+
+  TweenMax.to(rabbit.mesh.position, 2, { x: 20, ease: Power4.easeInOut })
+  TweenMax.to(rabbit.head.rotation, 2, { x: 0, y: 0, ease: Power4.easeInOut })
+  TweenMax.to(wolf.mouth.rotation, 2, { x: 0.2, ease: Power4.easeInOut })
+  TweenMax.to(wolf.mouth.rotation, 1, {
+    x: 0.4,
+    ease: Power4.easeIn,
+    delay: 1,
+    onComplete: function () {
+      resetGame()
+    }
+  })
 }
 
 export { initializer, unmount }

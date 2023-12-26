@@ -1,6 +1,8 @@
 import * as THREE from 'three'
 import { blackMat, pinkMat, whiteMat } from './materials'
 import { updateGeomVertex } from '../../helpers'
+import { TweenMax, Power1, Power4 } from 'gsap'
+import { GameStatusType } from './initializer'
 
 export default class Wolf {
   runningCycle: number
@@ -221,5 +223,67 @@ export default class Wolf {
     this.tail.rotation.x = 0.2 + Math.sin(t - Math.PI / 2)
 
     this.eyeR.scale.y = 0.5 + Math.sin(t + Math.PI) * 0.5
+  }
+
+  sit(handleStatusChange: (status: GameStatusType) => void) {
+    const sp = 1.2
+    const ease = Power4.easeOut
+    TweenMax.to(this.torso.rotation, sp, { x: -1.3, ease: ease })
+    TweenMax.to(this.torso.position, sp, {
+      y: -5,
+      ease: ease,
+      onComplete: () => {
+        this.nod()
+        handleStatusChange('readyToReplay')
+      }
+    })
+
+    TweenMax.to(this.head.rotation, sp, {
+      x: Math.PI / 3,
+      y: -Math.PI / 3,
+      ease: ease
+    })
+    TweenMax.to(this.tail.rotation, sp, { x: 2, y: Math.PI / 4, ease: ease })
+    TweenMax.to(this.pawBL.rotation, sp, { x: -0.1, ease: ease })
+    TweenMax.to(this.pawBR.rotation, sp, { x: -0.1, ease: ease })
+    TweenMax.to(this.pawFL.rotation, sp, { x: 1, ease: ease })
+    TweenMax.to(this.pawFR.rotation, sp, { x: 1, ease: ease })
+    TweenMax.to(this.mouth.rotation, sp, { x: 0.3, ease: ease })
+    TweenMax.to(this.eyeL.scale, sp, { y: 1, ease: ease })
+    TweenMax.to(this.eyeR.scale, sp, { y: 1, ease: ease })
+  }
+
+  nod() {
+    const _this = this
+    const sp = 1 + Math.random() * 2
+
+    // HEAD
+    const tHeadRotY = -Math.PI / 3 + Math.random() * 0.5
+    const tHeadRotX = Math.PI / 3 - 0.2 + Math.random() * 0.4
+    TweenMax.to(this.head.rotation, sp, {
+      x: tHeadRotX,
+      y: tHeadRotY,
+      ease: Power4.easeInOut,
+      onComplete: function () {
+        _this.nod()
+      }
+    })
+
+    // TAIL
+    const tTailRotY = -Math.PI / 4
+    TweenMax.to(this.tail.rotation, sp / 8, {
+      y: tTailRotY,
+      ease: Power1.easeInOut,
+      yoyo: true,
+      repeat: 8
+    })
+
+    // EYES
+    TweenMax.to([this.eyeR.scale, this.eyeL.scale], sp / 20, {
+      y: 0,
+      ease: Power1.easeInOut,
+      yoyo: true,
+      repeat: 1
+    })
   }
 }
