@@ -7,6 +7,7 @@ import {
   whiteMat
 } from './materials'
 import { updateGeomVertex } from '../../helpers'
+import { TweenMax, Power1, Power4 } from 'gsap'
 
 type Status = 'running'
 
@@ -241,5 +242,67 @@ export default class Rabbit {
     this.pawBL.position.y = 1.5 + Math.sin(Math.PI + t) * amp
     this.pawBL.rotation.x = Math.cos(t + Math.PI * 1.5) * Math.PI / 3
     this.pawBL.position.z = -Math.cos(Math.PI + t) * amp
+  }
+
+  nod() {
+    const _this = this
+    const sp = 0.5 + Math.random()
+
+    // HEAD
+    const tHeadRotY = -Math.PI / 6 + Math.random() * Math.PI / 3
+    TweenMax.to(this.head.rotation, sp, {
+      y: tHeadRotY, ease: Power4.easeInOut, onComplete: function() {
+        _this.nod()
+      }
+    })
+
+    // EARS
+    const tEarLRotX = Math.PI / 4 + Math.random() * Math.PI / 6
+    const tEarRRotX = Math.PI / 4 + Math.random() * Math.PI / 6
+    TweenMax.to(this.earL.rotation, sp, { x: tEarLRotX, ease: Power4.easeInOut })
+    TweenMax.to(this.earR.rotation, sp, { x: tEarRRotX, ease: Power4.easeInOut })
+
+    // PAWS BACK LEFT
+    const tPawBLRot = Math.random() * Math.PI / 2
+    const tPawBLY = -4 + Math.random() * 8
+    TweenMax.to(this.pawBL.rotation, sp / 2, { x: tPawBLRot, ease: Power1.easeInOut, yoyo: true, repeat: 2 })
+    TweenMax.to(this.pawBL.position, sp / 2, { y: tPawBLY, ease: Power1.easeInOut, yoyo: true, repeat: 2 })
+
+    // PAWS BACK RIGHT
+    const tPawBRRot = Math.random() * Math.PI / 2
+    const tPawBRY = -4 + Math.random() * 8
+    TweenMax.to(this.pawBR.rotation, sp / 2, { x: tPawBRRot, ease: Power1.easeInOut, yoyo: true, repeat: 2 })
+    TweenMax.to(this.pawBR.position, sp / 2, { y: tPawBRY, ease: Power1.easeInOut, yoyo: true, repeat: 2 })
+
+    // PAWS FRONT LEFT
+    const tPawFLRot = Math.random() * Math.PI / 2
+    const tPawFLY = -4 + Math.random() * 8
+    TweenMax.to(this.pawFL.rotation, sp / 2, { x: tPawFLRot, ease: Power1.easeInOut, yoyo: true, repeat: 2 })
+    TweenMax.to(this.pawFL.position, sp / 2, { y: tPawFLY, ease: Power1.easeInOut, yoyo: true, repeat: 2 })
+
+    // PAWS FRONT RIGHT
+    const tPawFRRot = Math.random() * Math.PI / 2
+    const tPawFRY = -4 + Math.random() * 8
+    TweenMax.to(this.pawFR.rotation, sp / 2, { x: tPawFRRot, ease: Power1.easeInOut, yoyo: true, repeat: 2 })
+    TweenMax.to(this.pawFR.position, sp / 2, { y: tPawFRY, ease: Power1.easeInOut, yoyo: true, repeat: 2 })
+
+    // MOUTH
+    const tMouthRot = Math.random() * Math.PI / 8
+    TweenMax.to(this.mouth.rotation, sp, { x: tMouthRot, ease: Power1.easeInOut })
+
+    // IRIS
+    const tIrisY = -1 + Math.random() * 2
+    const tIrisZ = -1 + Math.random() * 2
+    const iris1 = this.iris
+    const iris2 = this.eyeR.children[0]
+    TweenMax.to([iris1.position, iris2.position], sp, { y: tIrisY, z: tIrisZ, ease: Power1.easeInOut })
+
+    //EYES
+    if (Math.random() > .2) TweenMax.to([this.eyeR.scale, this.eyeL.scale], sp / 8, {
+      y: 0,
+      ease: Power1.easeInOut,
+      yoyo: true,
+      repeat: 1
+    })
   }
 }

@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import Rabbit from './Rabbit'
 import Wolf from './Wolf'
+import Tree from './Tree'
 
 let scene: THREE.Scene,
   camera: THREE.PerspectiveCamera,
@@ -152,7 +153,7 @@ const createRabbit = () => {
   rabbit = new Rabbit()
   rabbit.mesh.rotation.y = Math.PI / 2
   scene.add(rabbit.mesh)
-  // TODO rabbit.nod()
+  rabbit.nod()
 }
 
 const createWolf = () => {
@@ -160,6 +161,27 @@ const createWolf = () => {
   wolf.mesh.position.z = 20
   scene.add(wolf.mesh)
   updateWolfPosition()
+}
+
+const firs = new THREE.Group()
+
+const createFirs = () => {
+  const nTrees = 100
+  for (let i = 0; i < nTrees; i++) {
+    const phi = i * (Math.PI * 2) / nTrees
+    let theta = Math.PI / 2
+    theta += (Math.random() > .05) ? .25 + Math.random() * .3 : -.35 - Math.random() * .1
+
+    const fir = new Tree()
+    fir.mesh.position.x = Math.sin(theta) * Math.cos(phi) * floorRadius
+    fir.mesh.position.y = Math.sin(theta) * Math.sin(phi) * (floorRadius - 10)
+    fir.mesh.position.z = Math.cos(theta) * floorRadius
+
+    const vec = fir.mesh.position.clone()
+    const axis = new THREE.Vector3(0, 1, 0)
+    fir.mesh.quaternion.setFromUnitVectors(axis, vec.clone().normalize())
+    floor.add(fir.mesh)
+  }
 }
 
 const updateWolfPosition = () => {
@@ -202,7 +224,7 @@ const loop = () => {
   }
 
   render()
-  requestAnimationFrame(loop)
+  // requestAnimationFrame(loop)
 }
 
 const render = () => {
@@ -215,6 +237,7 @@ const initializer = (target: HTMLDivElement) => {
   createFloor()
   createRabbit()
   createWolf()
+  createFirs()
   loop()
 }
 
