@@ -25,15 +25,15 @@ let levelInterval
 const levelUpdateFreq = 3000
 const initSpeed = 5
 const maxSpeed = 48
-const monsterPos = 0.65
-const monsterPosTarget = 0.65
-const floorRotation = 0
+let wolfPos = 0.65
+let wolfPosTarget = 0.65
+let floorRotation = 0
 const collisionObstacle = 10
 const collisionBonus = 20
 const gameStatus = 'play'
 const cameraPosGame = 160
 const cameraPosGameOver = 260
-const monsterAcceleration = 0.004
+const wolfAcceleration = 0.004
 const malusClearColor = 0xb44b39
 const malusClearAlpha = 0
 const audio = new Audio('assets/race.mp3')
@@ -159,14 +159,50 @@ const createWolf = () => {
   wolf = new Wolf()
   wolf.mesh.position.z = 20
   scene.add(wolf.mesh)
-  // TODO: updateWolfPosition()
+  updateWolfPosition()
+}
+
+const updateWolfPosition = () => {
+  wolf.run()
+
+  wolfPosTarget += delta * wolfAcceleration
+  wolfPos += (wolfPosTarget - wolfPos) * delta
+
+  if (wolfPos < 0.56) {
+    console.log('game over')
+  }
+
+  const angle = Math.PI * wolfPos
+  wolf.mesh.position.y = -floorRadius + Math.sin(angle) * (floorRadius + 12)
+  wolf.mesh.position.x = Math.cos(angle) * (floorRadius + 15)
+  wolf.mesh.rotation.z = -Math.PI / 2 + angle
+}
+
+const updateFloorRotation = () => {
+  floorRotation += delta * 0.03 * speed
+  floorRotation = floorRotation % (Math.PI * 2)
+  floor.rotation.z = floorRotation
 }
 
 const loop = () => {
   delta = clock.getDelta()
-  // TODO: updateFloorRotation()
+  wolf.speed = speed
+  wolf.maxSpeed = maxSpeed
+  wolf.delta = delta
+  rabbit.speed = speed
+  rabbit.maxSpeed = maxSpeed
+  rabbit.delta = delta
+  updateFloorRotation()
+
+  if (gameStatus === 'play') {
+    if (rabbit.status === 'running') {
+      rabbit.run()
+    }
+    updateWolfPosition()
+  }
 
   render()
+  requestAnimationFrame(loop)
 }
 
 const render = () => {

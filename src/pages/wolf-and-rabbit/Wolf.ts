@@ -22,6 +22,9 @@ export default class Wolf {
   pawFR: THREE.Mesh
   pawBL: THREE.Mesh
   pawBR: THREE.Mesh
+  delta: number = 0
+  speed: number = 0
+  maxSpeed: number = 0
 
   constructor() {
     this.runningCycle = 0
@@ -82,7 +85,7 @@ export default class Wolf {
 
     this.tongue = new THREE.Mesh(tongueGeometry, pinkMat)
     this.tongue.position.z = 2
-    this.tongue.rotation.x = -.2
+    this.tongue.rotation.x = -0.2
     this.mouth.add(this.tongue)
 
     const noseGeom = new THREE.BoxGeometry(4, 4, 4, 1)
@@ -102,7 +105,7 @@ export default class Wolf {
     this.eyeL.castShadow = true
     this.head.add(this.eyeL)
 
-    const irisGeom = new THREE.BoxGeometry(.6, 1, 1)
+    const irisGeom = new THREE.BoxGeometry(0.6, 1, 1)
 
     this.iris = new THREE.Mesh(irisGeom, blackMat)
     this.iris.position.x = 1.2
@@ -148,7 +151,6 @@ export default class Wolf {
     this.tail.position.y = 4
     this.torso.add(this.tail)
 
-
     const pawGeom = new THREE.CylinderGeometry(1.5, 0, 10)
     pawGeom.applyMatrix4(new THREE.Matrix4().makeTranslation(0, -5, 0))
     this.pawFL = new THREE.Mesh(pawGeom, blackMat)
@@ -181,5 +183,39 @@ export default class Wolf {
     this.pawBR.castShadow = true
 
     this.body.rotation.y = Math.PI / 2
+  }
+
+  run() {
+    const s = Math.min(this.speed, this.maxSpeed)
+    this.runningCycle += this.delta * s * 0.7
+    this.runningCycle = this.runningCycle % (Math.PI * 2)
+    const t = this.runningCycle
+
+    this.pawFR.rotation.x = Math.sin(t) * Math.PI / 4
+    this.pawFR.position.y = -5.5 - Math.sin(t)
+    this.pawFR.position.z = 7.5 + Math.cos(t)
+
+    this.pawFL.rotation.x = Math.sin(t + .4) * Math.PI / 4
+    this.pawFL.position.y = -5.5 - Math.sin(t + .4)
+    this.pawFL.position.z = 7.5 + Math.cos(t + .4)
+
+    this.pawBL.rotation.x = Math.sin(t + 2) * Math.PI / 4
+    this.pawBL.position.y = -5.5 - Math.sin(t + 3.8)
+    this.pawBL.position.z = -7.5 + Math.cos(t + 3.8)
+
+    this.pawBR.rotation.x = Math.sin(t + 2.4) * Math.PI / 4
+    this.pawBR.position.y = -5.5 - Math.sin(t + 3.4)
+    this.pawBR.position.z = -7.5 + Math.cos(t + 3.4)
+
+    this.torso.rotation.x = Math.sin(t) * Math.PI / 8
+    this.torso.position.y = 3 - Math.sin(t + Math.PI / 2) * 3
+
+    //this.head.position.y = 5-Math.sin(t+Math.PI/2)*2;
+    this.head.rotation.x = -.1 + Math.sin(-t - 1) * .4
+    this.mouth.rotation.x = .2 + Math.sin(t + Math.PI + .3) * .4
+
+    this.tail.rotation.x = .2 + Math.sin(t - Math.PI / 2)
+
+    this.eyeR.scale.y = .5 + Math.sin(t + Math.PI) * .5
   }
 }
